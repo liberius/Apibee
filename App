@@ -1,0 +1,178 @@
+from kivy.app import App
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.behaviors import ButtonBehavior
+from kivy.uix.boxlayout import BoxLayout
+from kivy.lang import Builder
+from kivy.animation import Animation
+from kivy.clock import Clock
+from kivy.properties import StringProperty
+from datetime import datetime, timedelta
+import random
+
+class IconButton(ButtonBehavior, BoxLayout):
+    text = StringProperty('')
+    source = StringProperty('')
+
+    def tesoro(self):
+
+       self.parent.parent.tesoro(accion)
+
+
+Builder.load_string("""
+<IconButton>:
+    orientation: 'vertical'
+    Image:
+        source: root.source
+    Button:
+        text: root.text
+        on_press: root.tesoro(root.source)
+
+
+<MainWidget>:
+    FloatLayout:
+
+        Image:
+            source: 'fondo.png'
+            allow_stretch: True
+            keep_ratio: False
+        Image:
+            id: abeja
+            source: 'abeja.png'
+            size_hint: 0.2, 0.2
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        IconButton:
+            id: espantar
+            source: 'espantar.png'
+            text: 'Espantar'
+            size_hint: 0.2, 0.15
+            pos_hint: {'center_x': 0.25, 'center_y': 0.75}
+            on_press: root.tesoro(root.source)
+        IconButton:
+            id: ignorar
+            source: 'ignorar.png'
+            text: 'Ignorar'
+            size_hint: 0.2, 0.15
+            pos_hint: {'center_x': 0.75, 'center_y': 0.75}
+            on_press: root.tesoro(root.source)
+        IconButton:
+            id: acariciar
+            source: 'acariciar.png'
+            text: 'Hacer cariño'
+            size_hint: 0.2, 0.15
+            pos_hint: {'center_x': 0.25, 'center_y': 0.25}
+            on_press: root.tesoro(root.source)
+        IconButton:
+            id: abrazar
+            source: 'corazon.png'
+            text: 'Dar abrazo'
+            size_hint: 0.2, 0.15
+            pos_hint: {'center_x': 0.75, 'center_y': 0.25}
+            on_press: root.tesoro(root.source)
+        IconButton:
+            id: boton_juego
+            source: 'tesoro.png'
+            text: 'Abrir tesoro'
+            size_hint: 0.2, 0.15
+            pos_hint: {'center_x': 0.5, 'center_y': 0.1}
+            disabled: True
+            on_press: root.tesoro(root.source)
+        Image:
+            id: tesoro
+            source: 'tesoro.png'
+            size_hint: None, None
+            size: 0, 0
+            allow_stretch: True
+            keep_ratio: True
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+""")
+
+class MainWidget(BoxLayout):
+
+    def update_center_image(self, source):
+        tesoro = self.ids['tesoro']
+        tesoro.source = source
+        tesoro.size = (300, 300)
+
+    def __init__(self, **kwargs):
+        super(MainWidget, self).__init__(**kwargs)
+        self.last_button_press_time = datetime.now()
+        self.animate_abeja()
+
+    def animate_abeja(self):
+        abeja = self.ids['abeja']
+        anim = (Animation(pos_hint={'center_x': 0.5, 'center_y': 0.55}, duration=1) +
+                Animation(pos_hint={'center_x': 0.55, 'center_y': 0.5}, duration=1) +
+                Animation(pos_hint={'center_x': 0.5, 'center_y': 0.45}, duration=1) +
+                Animation(pos_hint={'center_x': 0.45, 'center_y': 0.5}, duration=1))
+        anim.repeat = True
+        anim.start(abeja)
+
+    def hide_tesoro_button(self):
+        now = datetime.now()
+        if now - self.last_button_press_time >= timedelta(days=1):
+            self.ids['tesoro'].opacity = 0
+            self.ids['espantar'].opacity = 1
+            self.ids['ignorar'].opacity = 1
+            self.ids['acariciar'].opacity = 1
+            self.ids['abrazar'].opacity = 1
+            abeja = self.ids['abeja']
+            abeja.source = 'abeja_tesoro.png'
+
+    def show_tesoro_button(self, dt):
+        self.ids['boton_juego'].opacity = 1
+        self.ids['boton_juego'].disabled = False
+        self.ids['espantar'].opacity = 0
+        self.ids['ignorar'].opacity = 0
+        self.ids['acariciar'].opacity = 0
+        self.ids['abrazar'].opacity = 0
+
+    def espantar_abeja(self):
+        self.last_button_press_time = datetime.now()
+        abeja = self.ids['abeja']
+        abeja.source = 'a_espantar.png'
+        Clock.schedule_once(self.show_tesoro_button, 2)
+
+    def ignorar_abeja(self):
+        self.last_button_press_time = datetime.now()
+        abeja = self.ids['abeja']
+        abeja.source = 'a_ignorar.png'
+        Clock.schedule_once(self.show_tesoro_button, 2)
+
+    def acariciar_abeja(self):
+        self.last_button_press_time = datetime.now()
+        abeja = self.ids['abeja']
+        abeja.source = 'a_acariciar.png'
+        Clock.schedule_once(self.show_tesoro_button, 2)
+
+    def abrazar_abeja(self):
+        self.last_button_press_time = datetime.now()
+        abeja = self.ids['abeja']
+        abeja.source = 'a_corazon.png'
+        Clock.schedule_once(self.show_tesoro_button, 2)
+
+
+        
+    def tesoro(self):
+        probabilidad = random.random()
+        anim = Animation(angle=360 * 5, duration=2)
+        anim.bind(on_complete=self.mostrar_resultado)
+
+        if probabilidad <= 0.15:
+            self.resultado = "¡Ganaste!"
+            self.update_center_image('ganaste.png')  # Asegúrate de tener una imagen llamada 'ganaste.png' en tu directorio de trabajo
+        else:
+            self.resultado = "Perdiste"
+            self.update_center_image('perdiste.png')  # Asegúrate de tener una imagen llamada 'perdiste.png' en tu directorio de trabajo
+
+    def mostrar_resultado(self, *args):
+        tesoro = self.ids['tesoro']
+        tesoro.size = (0, 0)  # Oculta la tesoro.
+        tesoro.opacity = 0
+        print(self.resultado)
+
+class AbejaApp(App):
+    def build(self):
+        return MainWidget()
+
+if __name__ == '__main__':
+    AbejaApp().run()
